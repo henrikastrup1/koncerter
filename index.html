@@ -76,13 +76,13 @@
     display:flex;flex-wrap:wrap;gap:12px;justify-content:center;
     padding:20px 24px;margin:-30px auto 0;max-width:800px;position:relative;z-index:2;
   }
-  .stat{
-    background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);
-    padding:10px 18px;text-align:center;flex:1;min-width:100px;
-    backdrop-filter:blur(12px);
-  }
-  .stat-num{font-size:1.5rem;font-weight:700;color:var(--gold);display:block}
-  .stat-label{font-size:.72rem;color:var(--ink3);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+  .stat{padding:10px 18px;text-align:center;flex:1;min-width:100px;
+    backdrop-filter:blur(12px);}
+.stat-btn{cursor:pointer;transition:all var(--tr)}
+.stat-btn:hover{border-color:var(--gold);transform:translateY(-2px);box-shadow:0 4px 16px var(--gold-glow)}
+.stat-btn.active{border-color:var(--gold);background:linear-gradient(135deg,rgba(212,168,83,.08),transparent)}
+.stat-num{font-size:1.5rem;font-weight:700;color:var(--gold);display:block}
+.stat-label{font-size:.72rem;color:var(--ink3);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
 
   /* ── Layout ── */
   .container{max-width:1100px;margin:0 auto;padding:0 20px}
@@ -262,17 +262,18 @@
 <header class="hero">
   <div class="vinyl vinyl-1"></div>
   <div class="vinyl vinyl-2"></div>
-  <div class="hero-badge">København &bull; Hovedstaden</div>
+  <div class="hero-badge">Sjælland &bull; Hovedstaden</div>
   <h1>KoncertRadar</h1>
   <p>Ugentlig overvågning af <span class="ampersand">store</span> internationale koncerter i hovedstadsområdet</p>
 </header>
 
 <!-- Stats -->
 <div class="stats" id="stats">
-  <div class="stat"><span class="stat-num" id="stat-total">—</span><span class="stat-label">Koncerter</span></div>
-  <div class="stat"><span class="stat-num" id="stat-upcoming">—</span><span class="stat-label">Kommende</span></div>
-  <div class="stat"><span class="stat-num" id="stat-this-week">—</span><span class="stat-label">Ny denne uge</span></div>
-  <div class="stat"><span class="stat-num" id="stat-spotted">—</span><span class="stat-label">Opdaget</span></div>
+  <div class="stat stat-btn" data-filter="all" title="Vis alle"><span class="stat-num" id="stat-total">—</span><span class="stat-label">Koncerter</span></div>
+  <div class="stat stat-btn" data-filter="upcoming" title="Kommende"><span class="stat-num" id="stat-upcoming">—</span><span class="stat-label">Kommende</span></div>
+  <div class="stat stat-btn" data-filter="new" title="Ny denne uge"><span class="stat-num" id="stat-this-week">—</span><span class="stat-label">Ny denne uge</span></div>
+  <div class="stat stat-btn" data-filter="available" title="Med billetter"><span class="stat-num" id="stat-spotted">—</span><span class="stat-label">Billetter</span></div>
+  <div class="stat stat-btn" data-filter="soldout" title="Udsolgt"><span class="stat-num" id="stat-soldout">—</span><span class="stat-label">Udsolgt</span></div>
 </div>
 
 <!-- Filters -->
@@ -777,11 +778,15 @@
     document.getElementById('stat-total').textContent = total;
     document.getElementById('stat-upcoming').textContent = upcoming;
     document.getElementById('stat-this-week').textContent = newThisWeek;
-    document.getElementById('stat-spotted').textContent = data.spotted_since || '—';
+    const soldOutCount = concerts.filter(c => c.soldOut).length;
+    document.getElementById('stat-soldout').textContent = soldOutCount;
+    document.getElementById('stat-spotted').textContent = concerts.filter(c => c.ticketUrl && !c.soldOut).length;
 
     // Filters
     const genreSet = new Set(); concerts.forEach(c => (c.genres||['pop']).forEach(g => genreSet.add(g)));
     const areaSet = new Set(); concerts.forEach(c => c.area && areaSet.add(c.area));
+    // Ensure Sjælland-wide cities always appear
+    ['Roskilde', 'Helsingør', 'Hillerød', 'Køge', 'Greve', 'Holbæk', 'Slagelse', 'Næstved', 'Ringsted', 'Kalundborg', 'Sorø', 'Haslev', 'Frederikssund', 'Helsinge'].forEach(a => areaSet.add(a));
     populateSelect('genre-filter', [...genreSet].sort());
     populateSelect('area-filter', [...areaSet].sort());
 
@@ -917,7 +922,23 @@
     document.getElementById('area-filter').value = '';
     document.getElementById('status-filter').value = '';
     document.getElementById('search-input').value = '';
+    document.querySelectorAll('.stat-btn').forEach(b => b.classList.remove('active'));
     applyFilters();
+  });
+
+  // Clickable stat buttons
+  document.querySelectorAll('.stat-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const filter = btn.dataset.filter;
+      document.querySelectorAll('.stat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('status-filter').value = '';
+      if (filter === 'upcoming') document.getElementById('status-filter').value = 'upcoming';
+      else if (filter === 'soldout') document.getElementById('status-filter').value = 'soldout';
+      else if (filter === 'available') document.getElementById('status-filter').value = 'available';
+      // 'all' and 'new' just trigger a normal re-render with default filters
+      applyFilters();
+    });
   });
 
   /* ── Init ── */
