@@ -2387,7 +2387,7 @@
       if(status === 'upcoming' && c.date < today) return false;
       if(status === 'soldout' && !c.soldOut) return false;
       if(status === 'available' && (c.soldOut || c.date < today)) return false;
-      if(search && !c.artist.toLowerCase().includes(search) && !(c.support||'').toLowerCase().includes(search)) return false;
+      if(search && !c.artist.toLowerCase().includes(search) && !(c.support||'').toLowerCase().includes(search) && !(c.venue||'').toLowerCase().includes(search) && !(c.area||'').toLowerCase().includes(search) && !(c.source||'').toLowerCase().includes(search)) return false;
       return true;
     });
 
