@@ -2509,6 +2509,7 @@
   });
 
   /* ── Init ── */
+  // v2 — søgning inkluderer venue, area, source
   render(JSON.parse(document.getElementById('concert-data').textContent));
   const updated = JSON.parse(document.getElementById('concert-data').textContent).updated;
   document.getElementById('last-updated').textContent = updated
